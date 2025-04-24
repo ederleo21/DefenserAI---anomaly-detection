@@ -1,0 +1,6 @@
+{% for a in alerts %}
+    <h1>{{a.anomaly_type}}</h1>
+    <img src="{{a.frame_image.url}}" alt="">
+{% endfor %}
+
+

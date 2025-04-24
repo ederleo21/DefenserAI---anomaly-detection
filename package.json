@@ -1,0 +1,22 @@
+{
+  "name": "defenserai",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "watch:css": "concurrently \"npx tailwindcss -i ./data_capture/static/data_capture/css/tailwind.css -o ./data_capture/static/data_capture/css/style.css --watch\" \"npx tailwindcss -i ./data_storage/static/data_storage/css/tailwind.css -o ./data_storage/static/data_storage/css/style.css --watch\" \"npx tailwindcss -i ./management/static/management/css/tailwind.css -o ./management/static/management/css/style.css --watch\" \"npx tailwindcss -i ./accounts/static/accounts/css/tailwind.css -o ./accounts/static/accounts/css/style.css --watch\" \"npx tailwindcss -i ./core/static/core/css/tailwind.css -o ./core/static/core/css/style.css --watch\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@heroicons/react": "^2.1.5",
+    "autoprefixer": "^10.4.20",
+    "font-awesome": "^4.7.0",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}

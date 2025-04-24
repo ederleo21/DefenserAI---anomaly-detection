@@ -1,0 +1,133 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block styles %}   
+  <link href="{% static 'data_storage/css/tailwind.css' %}" rel="stylesheet"> 
+  <link href="{% static 'data_storage/css/style.css' %}" rel="stylesheet"> 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
+
+{% block title %}Reportes{% endblock %}
+
+{% block content %}
+<div class="border-1 border-gray-300 p-3 shadow-lg my-4">
+    <div class="flex justify-between">
+        <h1 class="text-3xl font-bold text-center leading-loose mx-4">Reportes</h1>
+        <a href="{% url 'data_storage:main' %}">
+            <button class="text-3xl font-medium text-center leading-loose mx-4 text-black hover:text-blue-500 transition duration-300">
+                Ir a registro de alertas
+            </button>
+        </a>
+    </div>
+</div>
+
+<div class="flex flex-col items-center">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-center text-xl font-medium text-gray-500 uppercase tracking-wider">Título</th>
+                <th class="px-6 py-3 text-center text-xl font-medium text-gray-500 uppercase tracking-wider">Fecha de Generación</th>
+                <th class="px-6 py-3 text-center text-xl font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for informe in informes %}
+            <tr class="bg-gray-200">
+                <td class="px-6 py-4 whitespace-nowrap flex items-center justify-center text-lg">
+                    <i class="fa-3x fas fa-file-alt text-blue-500 mr-4"></i>
+                    {{ informe.name }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-lg">{{ informe.generated_at|date:"d M Y H:i" }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-lg">
+                    <a href="{{ informe.pdf_file.url }}" target="_blank">
+                        <button class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600">
+                            Descargar PDF
+                        </button>
+                    </a>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-lg">
+                    {% if permissions.delete_report %}
+                    <a href="{% url 'data_storage:eliminar_reporte' informe.id %}" 
+                       class="bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-600"
+                       onclick="return confirm('¿Estás seguro de que deseas eliminar este reporte?')">
+                        Eliminar
+                    </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">No se encontraron informes.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="mt-4 my-6">
+        <button class="text-xl bg-green-500 text-white font-bold py-4 px-4 rounded hover:bg-green-600" onclick="openFormModal()">
+            Generar un reporte
+        </button>
+    </div>
+</div>
+
+
+<!-- Modal de generación de informe -->
+<div id="formModal" class="fixed z-10 inset-0 overflow-y-auto hidden">
+    <div class="flex items-center justify-center min-h-screen bg-black bg-opacity-50">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-1/3">
+            <div class="fa-2x flex justify-between items-center">
+                <h3 class="text-xl font-semibold ">Generar Informe</h3>
+                <button class="text-gray-600" onclick="closeFormModal()">&times;</button>
+            </div>
+            <form method="POST" action="{% url 'data_storage:generar_informe' %}" target="_blank">
+                {% csrf_token %}
+                <div class="mt-4">
+                    <div class=" my-2">
+                        <em>Generar un reporte de un mes en específico</em>
+                    </div>
+                    <label for="mes" class="block text-sm font-medium text-gray-700">Mes</label>
+                    <select name="mes" id="mes" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+                </div>
+                <div class="mt-4">
+                    <label for="anio" class="block text-sm font-medium text-gray-700">Año</label>
+                    <input type="number" name="anio" id="anio" min="2000" max="2100" required class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div class="mt-6 flex justify-between">
+                    <button type="submit" class="bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600">
+                        Generar PDF
+                    </button>
+                    <button type="button" class="bg-gray-400 text-white font-bold py-2 px-4 rounded hover:bg-gray-500" onclick="closeFormModal()">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    function openFormModal() {
+        document.getElementById('formModal').classList.remove('hidden');
+    }
+
+    function closeFormModal() {
+        document.getElementById('formModal').classList.add('hidden');
+    }
+</script>
+{% endblock %}

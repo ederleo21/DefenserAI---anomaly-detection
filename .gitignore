@@ -1,0 +1,44 @@
+# Python bytecode
+*.py[cod]
+__pycache__/
+
+# Entornos virtuales (ajusta si usas uno distinto)
+env/
+venv/
+../entorno/
+
+# Archivos de entorno y configuración secreta
+.env
+*.env
+
+# Archivos de sistema y cachés
+*.DS_Store
+*.log
+*.swp
+
+# Base de datos local
+db.sqlite3
+
+# Migraciones (puedes ignorarlas si las generas en cada entorno)
+**/migrations/
+!**/migrations/__init__.py  # Para no romper los imports
+
+# Archivos generados por Django
+/staticfiles/
+/media/
+/media/*
+
+# Excepción para media necesaria (según tu ejemplo)
+!media/alert_frames/
+!media/alert_frames/.gitkeep
+
+# Node modules y dependencias JS
+node_modules/
+package-lock.json
+
+# Archivos de configuración innecesarios en producción
+postcss.config.js
+tailwind.config.js
+
+# Otros posibles archivos que quieras ignorar
+datos.json

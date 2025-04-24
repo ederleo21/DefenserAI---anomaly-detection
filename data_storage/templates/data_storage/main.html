@@ -1,0 +1,169 @@
+{% extends 'core/base.html' %} 
+{% load static %}
+
+{% block styles %}   
+  <link href="{% static 'data_storage/css/tailwind.css' %}" rel="stylesheet"> 
+  <link href="{% static 'data_storage/css/style.css' %}" rel="stylesheet"> 
+{% endblock %}
+
+{% block title %}Almacenamiento y reportes{% endblock %}
+
+{% block content %}
+<div class="border-1 border-gray-300 p-3 shadow-lg my-4 font-poppins">
+    <div class="flex justify-between">
+    <h1 class="text-3xl font-bold text-center leading-loose mx-4">Registro de alertas</h1>
+    {% if permissions.view_report %}
+    <a href="../reports">
+        <button class="text-3xl font-medium text-center leading-loose mx-4 text-black 
+                       hover:text-blue-500 transition duration-300">
+            Ir a reportes
+        </button>
+    </a>
+    {% endif %}
+    </div>
+</div>
+
+
+<div class="mx-4 font-poppins">
+    <form method="GET" action="" class="mb-4">
+        <div class="flex space-x-4">
+            <div class="flex-1">
+                <label for="alert_number" class="block text-lg font-medium text-gray-700">Filtrar por número de alerta:</label>
+                <input type="number" name="alert_number" id="alert_number" value="{{ request.GET.alert_number }}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+            </div>
+            <div class="flex-1">
+                <label for="anomaly_type" class="block text-lg font-medium text-gray-700">Filtrar por palabra clave:</label>
+                <input type="text" name="anomaly_type" id="anomaly_type" value="{{ request.GET.anomaly_type }}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+            </div>
+            <div class="flex-1">
+                <label for="confidence" class="block text-lg font-medium text-gray-700">Confiabilidad:</label>
+                <select name="confidence" id="confidence" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+                    <option value="">Mayor al:</option>
+                    <option value="50">50%</option>
+                    <option value="60">60%</option>
+                    <option value="70">70%</option>
+                    <option value="80">80%</option>
+                    <option value="90">90%</option>
+                </select>
+            </div>
+            <div class="flex-1">
+                <label for="alert_date" class="block text-lg font-medium text-gray-700">Filtrar por fecha:</label>
+                <input type="date" name="alert_date" id="alert_date" value="{{ request.GET.alert_date }}" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-lg">
+            </div>
+            <div class="flex items-end ml-medium">
+                <button type="submit" class="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 text-lg">Enviar</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+<div class="mx-4 font-poppins">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider">Número de alerta</th>
+                <th scope="col" class="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider">Tipo de anomalía</th>
+                <th scope="col" class="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider">Índice de confiabilidad</th>
+                <th scope="col" class="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider">Fecha de detección</th>
+                <th scope="col" class="px-6 py-3 text-left text-lg font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for alerta in alertas_dict %}
+            <tr class="bg-gray-200">
+                <td class="px-6 py-4 whitespace-nowrap text-lg">{{ alerta.id }}</td>
+                <td class="px-6 py-4 whitespace-nowrap flex items-center text-lg">
+                    <svg class="w-5 h-5 text-white mr-2 bg-black" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M10 18a2 2 0 100-4 2 2 0 000 4zm-1-6V4a1 1 0 112 0v8a1 1 0 01-2 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    {{ alerta.anomaly_type }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-lg">{{ alerta.confidence }}%</td>
+                <td class="px-6 py-4 whitespace-nowrap text-lg">{{ alerta.timestamp|date:"Y-m-d H:i:s" }}</td> <!-- Formato de fecha -->
+                <td class="text-lg">
+                    {% if permissions.view_alert %}
+                    <button 
+                        type="button" 
+                        class="bg-blue-500 text-white font-bold py-2 px-4 rounded"
+                        onclick="openModal('{{ alerta.id }}', '{{ alerta.anomaly_type }}', '{{ alerta.confidence }}', '{{ alerta.timestamp }}', '{{ alerta.frame_image }}', '{{ alerta.created_by__username }}')"
+                    >
+                        Detalles
+                    </button>
+                    {% endif %}
+                    {% if permissions.delete_alert %}
+                    <form method="POST" action="{% url 'data_storage:eliminar_alerta' alerta.id %}" style="display:inline-block;">
+                        {% csrf_token %}
+                        <button type="submit" class="bg-red-500 text-white font-bold py-2 px-4 rounded mt-2">Eliminar</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="px-6 py-4 whitespace-nowrap text-center text-gray-500 text-lg">No se encontraron alertas.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal -->
+<div id="myModal" class="fixed z-10 inset-0 overflow-y-auto hidden font-poppins bg-black bg-opacity-50">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-104 h-auto m-5"> <!-- Modal más grande -->
+            <div class="flex justify-between items-center border-b pb-3 mb-3">
+                <h3 class="text-xl font-semibold text-gray-800 leading-tight">Detalles de la alerta</h3>
+                <button class="text-gray-600 hover:text-gray-800 text-3xl transition duration-200" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="space-y-4"> <!-- Espaciado más amplio -->
+                <div class="flex justify-center">
+                    <img id="modalImage" src="" class="w-72 h-72 object-cover rounded-lg shadow-md mb-4" alt="Imagen de la alerta"> <!-- Imagen más grande -->
+                    <p id="noImageMessage" class="text-red-500 hidden text-center w-full">No hay imagen disponible.</p>
+                </div>
+                <p class="text-base text-gray-700"><strong class="font-bold text-gray-800">Número de alerta:</strong> <span id="modalId" class="text-gray-900"></span></p>
+                <p class="text-base text-gray-700"><strong class="font-bold text-gray-800">Descripción de anomalía:</strong> <span id="modalType" class="text-gray-900"></span></p>
+                <p class="text-base text-gray-700"><strong class="font-bold text-gray-800">Índice de confiabilidad:</strong> <span id="modalConfidence" class="text-gray-900"></span>%</p>
+                <p class="text-base text-gray-700"><strong class="font-bold text-gray-800">Fecha de detección:</strong> <span id="modalTimestamp" class="text-gray-900"></span></p>
+                <p class="text-base text-gray-700"><strong class="font-bold text-gray-800">Generado por el usuario:</strong> <span id="modalCreatedby" class="text-gray-900"></span></p>
+            </div>
+            <div class="mt-6 flex justify-end"> <!-- Espaciado mayor -->
+                <button onclick="closeModal()" class="bg-blue-800 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-md transition duration-300 shadow-lg">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    function openModal(id, type, confidence, timestamp, frame_image, created_by){
+        document.getElementById('modalId').innerText = id;
+        document.getElementById('modalType').innerText = type;
+        document.getElementById('modalConfidence').innerText = confidence;
+        document.getElementById('modalTimestamp').innerText = timestamp;
+        document.getElementById('modalCreatedby').innerText = created_by;
+
+        const modalImage = document.getElementById('modalImage');
+        const noImageMessage = document.getElementById('noImageMessage');
+       
+
+        if (frame_image) {
+            modalImage.src = '/media/' + frame_image;  
+            modalImage.classList.remove('hidden');
+            noImageMessage.classList.add('hidden');
+        } else {
+            modalImage.classList.add('hidden');
+            noImageMessage.classList.remove('hidden');
+        }
+
+        document.getElementById('myModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+        document.getElementById('myModal').classList.add('hidden');
+    }
+</script>
+{% endblock %}

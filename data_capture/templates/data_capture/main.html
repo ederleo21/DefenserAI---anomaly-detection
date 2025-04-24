@@ -1,0 +1,272 @@
+{% extends 'core/base.html' %} 
+{% load static %}
+
+{% block styles %}   
+  <link href="{% static 'data_capture/css/tailwind.css' %}" rel="stylesheet"> 
+  <link href="{% static 'data_capture/css/style.css' %}" rel="stylesheet"> 
+  <style>
+    .modal {
+      display: none; 
+      position: fixed;
+      z-index: 50;
+      left: 0;
+      top: 0;
+      width: 100%; 
+      height: 100%; 
+      overflow: hidden;
+      background-color: rgba(0, 0, 0, 0.8); 
+    }
+    .modal-content {
+      background-color: #fefefe;
+      border: none; 
+      width: 100%; 
+      height: 100%; 
+      display: flex;
+      flex-direction: column;
+      justify-content: center; 
+      align-items: center; 
+    }
+    .close {
+      color: #aaa;
+      font-size: 28px;
+      font-weight: bold;
+      position: absolute; 
+      top: 20px;
+      right: 30px;
+    }
+    .close:hover,
+    .close:focus {
+      color: #fff;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    video {
+      width: 100%;
+      height: auto;
+      max-height: 90%; 
+      border: none; 
+    }
+    canvas {
+      display: none; 
+    }
+  </style>
+{% endblock %}
+
+<title>{% block title %}Captura de datos{% endblock %}</title>
+
+{% block content %} 
+<div class="bg-gray-100 font-poppins p-6 rounded-lg shadow-sm flex items-center justify-center">
+  <h1 class="text-3xl font-bold text-gray-800">Captura de datos</h1>
+</div>
+<div class="container mx-auto px-4 py-1">
+  <div class="container mx-auto px-4 py-6">
+    <div class="flex flex-col md:flex-row justify-between items-start mb-6 font-poppins">
+      <div class="w-full md:w-2/3 mb-4 md:mb-0">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">Cámaras Disponibles</h1>
+        <div class="overflow-x-auto rounded-lg shadow-lg border border-gray-300 mt-8">
+            <table class="min-w-full bg-white divide-y divide-gray-300 font-poppins">
+                <thead>
+                    <tr class="bg-gray-200">
+                        <th class="py-3 px-4 text-left text-sm font-bold text-gray-700">Imagen</th>
+                        <th class="py-3 px-4 text-left text-sm font-bold text-gray-700">Nombre</th>
+                        <th class="py-3 px-4 text-left text-sm font-bold text-gray-700">URL</th>
+                        <th class="py-3 px-4 text-left text-sm font-bold text-gray-700">Descripción</th>
+                        <th class="py-3 px-4 text-left text-sm font-bold text-gray-700">Seleccionar</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    <tr class="hover:bg-gray-50 transition duration-150">
+                        <td class="py-4 px-4 text-sm text-gray-800">
+                            <img src="{% static 'data_capture/images/camarapc.png' %}" alt="Cámara del Computador" class="w-12 h-12 object-cover rounded">
+                        </td>
+                        <td class="py-4 px-4 text-gray-800 text-base font-bold">Cámara del Computador</td>
+                        <td class="py-4 px-4 text-sm text-gray-800">Cámara por defecto del computador</td>
+                        <td class="py-4 px-4 text-sm text-gray-800">Usar la cámara del dispositivo</td>
+                        <td class="py-4 px-4 text-sm text-gray-800">
+                            <input type="radio" name="selected-camera" value="default" data-url="default" class="camera-select w-6 h-6 focus:ring-blue-950 ring-blue-900 border-2 border-gray-400"/>
+                        </td>
+                    </tr>
+                    {% for camera in cameras %}
+                        <tr class="hover:bg-gray-50 transition duration-150">
+                            <td class="py-4 px-4 text-sm text-gray-800">
+                                <img src="{% static 'data_capture/images/camaraip.png' %}" alt="{{ camera.name }}" class="w-12 h-12 object-cover rounded">
+                            </td>
+                            <td class="py-4 px-4 text-gray-800 font-bold text-base">{{ camera.name }}</td>
+                            <td class="py-4 px-4 text-sm text-gray-800">{{ camera.url }}</td>
+                            <td class="py-4 px-4 text-sm text-gray-800">{{ camera.description }}</td>
+                            <td class="py-4 px-4 text-sm text-gray-800">
+                                <input type="radio" name="selected-camera" value="{{ camera.url }}" data-url="{{ camera.url }}" class="camera-select w-6 h-6 focus:ring-blue-950 ring-blue-900 border-2 border-gray-400"/>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="py-4 px-4 text-center text-gray-600">No hay cámaras disponibles.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="w-full md:w-1/4 flex flex-col gap-3 mt-8 md:mt-0">
+      {% if permissions.start_trasmission %}
+      <div class="bg-white shadow-lg rounded-lg p-4 flex flex-col items-center">
+          <button id="start-button" class="bg-blue-800 text-white font-bold py-2 px-4 rounded w-full mb-2 transition-transform transform hover:scale-105 hover:bg-blue-700">
+              Iniciar Transmisión
+          </button>
+          <p class="text-gray-600 text-sm text-center font-semibold">Comienza la transmisión en vivo de tus cámaras.</p>
+          <img src="{% static 'data_capture/images/camara-ip.avif' %}" alt="Descripción de la imagen" class="w-full h-auto rounded-lg mt-2 object-cover" />
+      </div>
+      {% endif %}
+  
+      <div class="bg-white shadow-lg rounded-lg p-4 flex flex-col items-center">
+        <button id="open-modal" class="bg-blue-800 text-white font-bold py-2 px-4 rounded w-full mb-2 transition-transform transform hover:scale-105 hover:bg-blue-700">
+            Elegir Anomalías
+        </button>
+        <p class="text-gray-600 text-sm text-center font-semibold">Selecciona las anomalías que deseas monitorizar.</p>
+        <img src="{% static 'data_capture/images/personas.jpg' %}" alt="Descripción de la imagen" class="w-full h-auto rounded-lg mt-2 object-cover" />
+    </div>
+  </div>      
+</div>  
+
+    <div id="modal" class="modal">
+      <div class="modal-content outline-dashed">
+        <span class="close" id="close-button">&times;</span>
+        <video id="video-stream" autoplay playsinline></video>
+        <canvas id="canvas" width="640" height="480" class="hidden"></canvas>
+        
+        <div class="flex justify-center gap-8 items-center">
+          <button id="stop-button" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-4 rounded mt-4">
+            Finalizar transmisión
+          </button>
+          <div id="detection-status" class="text-center text-gray-800 mt-4 font-bold font-poppins text-3xl"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="anomaly-modal" class="fixed inset-0 font-poppins bg-gray-600 bg-opacity-50 flex justify-center items-center hidden">
+      <div class="bg-white p-6 rounded-md w-4/5 max-w-7xl overflow-y-auto max-h-[80vh]">
+        <h2 class="text-3xl font-bold mb-4 text-center">Seleccione las anomalías a detectar:</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+
+          <!-- Bloque de Aglomeración -->
+          <div class="anomaly-item bg-gray-100 p-5 rounded-lg shadow-lg flex flex-col">
+            <h3 class="text-lg font-semibold mb-3">Aglomeración</h3>
+            <div class="flex flex-grow mb-3">
+              <img src="{% static 'data_capture/images/foto-aglomeracion.png' %}" alt="Aglomeración" class="w-full h-40 object-cover rounded-md mr-4"> 
+              <p class="text-sm font-semibold flex-grow">Detecta grandes concentraciones de personas en un área específica.</p>
+            </div>
+            <label class="flex items-center mt-3">
+              <input type="checkbox" class="anomaly-checkbox mr-2" value="agglomeration">
+              Seleccionar
+            </label>
+          </div>
+
+          <!-- Bloque de Pelea -->
+          <div class="anomaly-item bg-gray-100 p-5 rounded-lg shadow-lg flex flex-col">
+            <h3 class="text-lg font-semibold mb-3">Pelea</h3>
+            <div class="flex flex-grow mb-3">
+              <img src="{% static 'data_capture/images/foto-pelea.jpg' %}" alt="Pelea" class="w-full h-40 object-cover rounded-md mr-4"> 
+              <p class="text-sm font-semibold flex-grow">Detecta comportamientos agresivos o peleas entre personas.</p>
+            </div>
+            <label class="flex items-center mt-3">
+              <input type="checkbox" class="anomaly-checkbox mr-2" value="fight_detected">
+              Seleccionar
+            </label>
+          </div>
+
+          <!-- Bloque de Caída -->
+          <div class="anomaly-item bg-gray-100 p-5 rounded-lg shadow-lg flex flex-col">
+            <h3 class="text-lg font-semibold mb-3">Caída</h3>
+            <div class="flex flex-grow mb-3">
+              <img src="{% static 'data_capture/images/foto-caida.webp' %}" alt="Caída" class="w-full h-40 object-cover rounded-md mr-4">
+              <p class="text-sm font-semibold flex-grow">Detecta si una persona ha sufrido una caída y no se levanta.</p>
+            </div>
+            <label class="flex items-center mt-3">
+              <input type="checkbox" class="anomaly-checkbox mr-2" value="fall_detected">
+              Seleccionar
+            </label>
+          </div>
+
+          <!-- Bloque de Fuego -->
+          <div class="anomaly-item bg-gray-100 p-5 rounded-lg shadow-lg flex flex-col">
+            <h3 class="text-lg font-semibold mb-3">Fuego y humo</h3>
+            <div class="flex flex-grow mb-3">
+              <img src="{% static 'data_capture/images/foto-incendio.jpg' %}" alt="Fuego" class="w-full h-40 object-cover rounded-md mr-4">
+              <p class="text-sm font-semibold flex-grow">Detecta la presencia de fuego en el área monitoreada.</p>
+            </div>
+            <label class="flex items-center mt-3">
+              <input type="checkbox" class="anomaly-checkbox mr-2" value="fire_detected">
+              Seleccionar
+            </label>
+          </div>
+
+          <!-- Bloque de intruso -->
+          <div class="anomaly-item bg-gray-100 p-5 rounded-lg shadow-lg flex flex-col">
+            <h3 class="text-lg font-semibold mb-3">Intruso en área restingida</h3>
+            <div class="flex flex-grow mb-3">
+              <img src="{% static 'data_capture/images/foto-intruso.png' %}" alt="Intruso" class="w-full h-40 object-cover rounded-md mr-4"> 
+              <p class="text-sm font-semibold flex-grow">Detecta la presencia de una persona en un área sin circulación.</p>
+            </div>
+            <label class="flex items-center mt-3">
+              <input type="checkbox" class="anomaly-checkbox mr-2" value="intruder_detected">
+              Seleccionar
+            </label>
+          </div>
+
+          <!-- Bloque de correr -->
+          <div class="anomaly-item bg-gray-100 p-5 rounded-lg shadow-lg flex flex-col">
+            <h3 class="text-lg font-semibold mb-3">Correr en área prohibida</h3>
+            <div class="flex flex-grow mb-3">
+              <img src="{% static 'data_capture/images/foto-correr.jpg' %}" alt="Correr" class="w-full h-40 object-cover rounded-md mr-4"> 
+              <p class="text-sm font-semibold flex-grow">Detecta una persona corriendo en un área de prohibido correr</p>
+            </div>
+            <label class="flex items-center mt-3">
+              <input type="checkbox" class="anomaly-checkbox mr-2" value="run_detected">
+              Seleccionar
+            </label>
+          </div>
+
+          <!-- Bloque de salto brusco -->
+          <div class="anomaly-item bg-gray-100 p-5 rounded-lg shadow-lg flex flex-col">
+            <h3 class="text-lg font-semibold mb-3">Salto brusco</h3>
+            <div class="flex flex-grow mb-3">
+              <img src="{% static 'data_capture/images/jump-foto.jpg' %}" alt="Salto" class="w-full h-40 object-cover rounded-md mr-4">
+              <p class="text-sm font-semibold flex-grow">Detecta cuando una persona hace saltos bruscos en sitios delicados</p>
+            </div>
+            <label class="flex items-center mt-3">
+              <input type="checkbox" class="anomaly-checkbox mr-2" value="jump_detected">
+              Seleccionar
+            </label>
+          </div>
+
+          <!-- Bloque de agresión -->
+          <div class="anomaly-item bg-gray-100 p-5 rounded-lg shadow-lg flex flex-col">
+            <h3 class="text-lg font-semibold mb-3">Agresión</h3>
+            <div class="flex flex-grow mb-3">
+              <img src="{% static 'data_capture/images/agresion-foto.avif' %}" alt="Agresión" class="w-full h-40 object-cover rounded-md mr-4"> 
+              <p class="text-sm font-semibold flex-grow">Detecta cuando una persona está agrediendo a otra fisícamente</p>
+            </div>
+            <label class="flex items-center mt-3">
+              <input type="checkbox" class="anomaly-checkbox mr-2" value="agression_detected">
+              Seleccionar
+            </label>
+          </div>
+            <!-- Agrega más bloques de anomalías aquí -->
+
+        </div>
+        <div class="flex justify-end mt-6">
+          <button id="confirm-selection" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-5 rounded mr-2">Confirmar</button>
+          <button id="close-modal" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-5 rounded">Cancelar</button>
+        </div>
+      </div>
+    </div>
+    
+
+  <script src="{% static 'data_capture/js/capture_frames.js' %}"></script>
+  <script>
+     const detectFightUrl = "{% url 'data_capture:detect_anomaly' %}";
+     const setAnomaliesUrl = "{% url 'data_capture:set_anomalies' %}";
+  </script>
+</div>
+{% endblock %}
